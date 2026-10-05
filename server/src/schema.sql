@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS upvotes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (report_id, voter_key)
 );
-CREATE INDEX idx_reports_status ON reports(status);
-CREATE INDEX idx_reports_category ON reports(category);
-CREATE INDEX idx_reports_created ON reports(created_at DESC);
-CREATE INDEX idx_reports_geo ON reports(latitude, longitude);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
+CREATE INDEX IF NOT EXISTS idx_reports_category ON reports(category);
+CREATE INDEX IF NOT EXISTS idx_reports_created ON reports(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reports_geo ON reports(latitude, longitude);
