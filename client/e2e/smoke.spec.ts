@@ -41,15 +41,34 @@ test.describe('dashboard', () => {
 
 test.describe('report detail', () => {
   test('pretty /reports/:id/ URL serves the report shell and loads data', async ({ page }) => {
-    // Grab a real report id from the reports list (read-only)
+    // Grab a real report id from the reports list (read-only).
+    // Cards load async after the API call, and the page also has nav links
+    // like /reports/ itself — so wait until a real /reports/<id>/ link appears.
     await page.goto('/reports/');
-    const firstLink = page.locator('a[href^="/reports/"]').first();
-    await firstLink.waitFor({ timeout: 20000 });
-    const href = await firstLink.getAttribute('href');
-    expect(href).toMatch(/^\/reports\/[^/]+\/$/);
+    const hasReportLink = () =>
+      page.evaluate(() => {
+        const links = Array.from(
+          document.querySelectorAll<HTMLAnchorElement>('a[href^="/reports/"]'),
+        );
+        return links.some((a) => {
+          const h = a.getAttribute('href');
+          return h !== null && /^\/reports\/[^/]+\/$/.test(h);
+        });
+      });
+    await expect.poll(hasReportLink, { timeout: 20000 }).toBe(true);
+    const href: string | null = await page.evaluate(() => {
+      const links = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>('a[href^="/reports/"]'),
+      );
+      const found = links
+        .map((a) => a.getAttribute('href'))
+        .find((h) => h !== null && /^\/reports\/[^/]+\/$/.test(h));
+      return found ?? null;
+    });
+    expect(href).toBeTruthy();
 
     // The pretty URL must not 404 — Vercel rewrites it to the /reports/view/ shell
-    const resp = await page.goto(href!);
+    const resp = await page.goto(href as string);
     expect(resp?.status()).toBe(200);
 
     // The shell reads the id from the URL and loads the report from the API
