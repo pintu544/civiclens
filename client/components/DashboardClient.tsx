@@ -55,7 +55,7 @@ export function DashboardClient() {
 
   useEffect(() => {
     let alive = true;
-    Promise.all([fetchStats(), fetchReports({ limit: 300, sort: 'newest' })])
+    Promise.all([fetchStats(), fetchReports({ limit: 100, sort: 'newest' })])
       .then(([s, r]) => {
         if (!alive) return;
         setStats(s);

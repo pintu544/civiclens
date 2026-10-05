@@ -58,7 +58,7 @@ export function HomeClient() {
     fetchStats()
       .then((s) => alive && setStats(s))
       .catch((e) => alive && setStatsError(e instanceof ApiError ? e.message : 'Could not load stats.'));
-    fetchReports({ limit: 200, sort: 'newest' })
+    fetchReports({ limit: 100, sort: 'newest' })
       .then((r) => {
         if (!alive) return;
         setMapReports(r.reports);
