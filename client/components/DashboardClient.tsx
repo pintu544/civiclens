@@ -167,7 +167,7 @@ export function DashboardClient() {
                           {a.label}
                         </p>
                         <p className="shrink-0 text-sm font-bold tabular-nums text-slate-900">
-                          {a.count} <span className="font-medium text-slate-400">reports</span>
+                          {a.count} <span className="font-medium text-slate-400">{a.count === 1 ? 'report' : 'reports'}</span>
                         </p>
                       </div>
                       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">

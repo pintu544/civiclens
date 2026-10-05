@@ -61,7 +61,19 @@ export function ReportWizard() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [result, setResult] = useState<CreateReportResponse | null>(null);
 
-  const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
+  const set = (patch: Partial<Draft>) => {
+    setDraft((d) => ({ ...d, ...patch }));
+    // Clear stale validation errors for fields the user just touched.
+    setErrors((prev) => {
+      const next = { ...prev };
+      for (const k of Object.keys(patch)) {
+        if (k === 'title') delete next.title;
+        if (k === 'description') delete next.description;
+        if (k === 'lat' || k === 'lng') delete next.location;
+      }
+      return next;
+    });
+  };
 
   const updatePosition = async (lat: number, lng: number, { geocode }: { geocode: boolean }) => {
     set({ lat, lng, geoError: null, addressLoading: geocode });
@@ -316,7 +328,7 @@ export function ReportWizard() {
                   </svg>
                   {draft.addressLoading ? 'Locating…' : 'Use my location'}
                 </button>
-                <span className="text-xs text-slate-500">or drag the pin to the exact spot</span>
+                <span className="text-xs text-slate-500">or click the map to drop a pin</span>
               </div>
               <PickMapShell
                 pickPosition={draft.lat != null && draft.lng != null ? [draft.lat, draft.lng] : null}
@@ -397,7 +409,7 @@ export function ReportWizard() {
               </div>
               <div className="flex flex-wrap gap-x-8 gap-y-4">
                 <div>
-                  <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Your description</dt>
+                  <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Category</dt>
                   <dd className="mt-1">
                     {draft.categoryPick ? <CategoryBadge category={draft.categoryPick} /> : <span className="text-sm text-slate-500">Letting AI decide</span>}
                   </dd>

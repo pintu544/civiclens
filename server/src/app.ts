@@ -483,6 +483,29 @@ export function createApp(options: AppOptions = {}): express.Express {
     }
   });
 
+  // -- DELETE /api/reports/:id (admin only) -------------------------------------
+  app.delete('/api/reports/:id', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!adminKeyIsValid(req)) {
+        res.status(401).json({ error: 'Unauthorized: invalid or missing x-admin-key header' });
+        return;
+      }
+      const { id } = req.params;
+      if (!isUuid(id)) {
+        res.status(404).json({ error: 'Report not found' });
+        return;
+      }
+      const { rows } = await pool.query('DELETE FROM reports WHERE id = $1 RETURNING id', [id]);
+      if (rows.length === 0) {
+        res.status(404).json({ error: 'Report not found' });
+        return;
+      }
+      res.json({ deleted: true, id: rows[0].id });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // -- GET /api/stats ----------------------------------------------------------
   app.get('/api/stats', async (_req: Request, res: Response, next: NextFunction) => {
     try {

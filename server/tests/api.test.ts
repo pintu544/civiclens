@@ -302,6 +302,36 @@ describe('PATCH /api/reports/:id/status', () => {
   });
 });
 
+describe('DELETE /api/reports/:id', () => {
+  it('requires the admin key', async () => {
+    const created = await createReport();
+    const id = created.body.report.id;
+    const noKey = await request(app).delete(`/api/reports/${id}`);
+    expect(noKey.status).toBe(401);
+    const wrongKey = await request(app).delete(`/api/reports/${id}`).set('x-admin-key', 'wrong');
+    expect(wrongKey.status).toBe(401);
+  });
+
+  it('deletes the report and returns 404 afterwards', async () => {
+    const created = await createReport();
+    const id = created.body.report.id;
+    const res = await request(app).delete(`/api/reports/${id}`).set('x-admin-key', ADMIN_KEY);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ deleted: true, id });
+    const gone = await request(app).get(`/api/reports/${id}`);
+    expect(gone.status).toBe(404);
+  });
+
+  it('returns 404 for unknown id and malformed id', async () => {
+    const missing = await request(app)
+      .delete('/api/reports/22222222-2222-2222-2222-222222222222')
+      .set('x-admin-key', ADMIN_KEY);
+    expect(missing.status).toBe(404);
+    const malformed = await request(app).delete('/api/reports/not-a-uuid').set('x-admin-key', ADMIN_KEY);
+    expect(malformed.status).toBe(404);
+  });
+});
+
 describe('GET /api/stats', () => {
   it('computes correct aggregates', async () => {
     const pool = getPool();

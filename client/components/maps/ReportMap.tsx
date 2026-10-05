@@ -77,9 +77,37 @@ function FitToReports({ reports }: { reports: Report[] }) {
   useEffect(() => {
     if (fitted.current || interacted.current || reports.length === 0) return;
     fitted.current = true;
-    const bounds = L.latLngBounds(reports.map((r) => [r.latitude, r.longitude] as [number, number]));
-    map.fitBounds(bounds.pad(0.25), { animate: true });
+    // invalidateSize first: the container may have been hidden or not yet laid
+    // out when Leaflet measured it (wrong size => wrong fit).
+    const t = setTimeout(() => {
+      map.invalidateSize();
+      const bounds = L.latLngBounds(reports.map((r) => [r.latitude, r.longitude] as [number, number]));
+      map.fitBounds(bounds.pad(0.25), { animate: true });
+    }, 60);
+    return () => clearTimeout(t);
   }, [map, reports]);
+  return null;
+}
+
+/** Fix tiles when the map mounts inside a hidden container (wizard steps). */
+function FixHiddenMap() {
+  const map = useMap();
+  useEffect(() => {
+    const t1 = setTimeout(() => map.invalidateSize(), 50);
+    const t2 = setTimeout(() => map.invalidateSize(), 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [map]);
+  return null;
+}
+
+/** Click-to-place pin for the report wizard (in addition to drag). */
+function PickClickHandler({ onPick }: { onPick?: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => onPick?.(e.latlng.lat, e.latlng.lng),
+  });
   return null;
 }
 
@@ -199,7 +227,9 @@ export default function ReportMap({
       )}
       {mode === 'pick' && (
         <>
+          <FixHiddenMap />
           <RecenterOnPick position={pickPosition} />
+          <PickClickHandler onPick={onPick} />
           {pickPosition && (
             <Marker
               position={pickPosition}
