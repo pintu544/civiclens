@@ -516,8 +516,8 @@ function SuccessScreen({ result, userPick }: { result: CreateReportResponse; use
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">AI triage result</h2>
             {triage && (
-              <span className="text-xs font-medium text-slate-400" title={triage.provider === 'nebius' ? 'Classified by an AI model (Nebius)' : 'Classified by our transparent rules engine (AI model unavailable)'}>
-                {triage.provider === 'nebius' ? 'Triaged by AI' : 'Triaged by rules engine'}
+              <span className="text-xs font-medium text-slate-400" title={triage.provider === 'llm' ? 'Classified by an AI model (FastRouter)' : 'Classified by our transparent rules engine (AI model unavailable)'}>
+                {triage.provider === 'llm' ? 'Triaged by AI' : 'Triaged by rules engine'}
               </span>
             )}
           </div>

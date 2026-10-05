@@ -28,7 +28,7 @@ then `npm run seed`.
 | Var | Required | Description |
 |---|---|---|
 | `DATABASE_URL` | yes | Postgres connection string, or `pgmem://demo` for in-memory demo mode |
-| `NEBIUS_API_KEY` | no | Enables the Nebius (NVIDIA Nemotron) triage provider. Without it, triage uses the transparent keyword heuristic |
+| `LLM_API_KEY` | no | Enables the FastRouter LLM triage provider. Without it, triage uses the transparent keyword heuristic |
 | `ADMIN_KEY` | no | Shared secret for `PATCH /api/reports/:id/status` via the `x-admin-key` header. If unset, an ephemeral key is generated and printed at startup |
 | `PORT` | no | Defaults to `4000` |
 
@@ -48,7 +48,7 @@ Copy `.env.example` to `.env` to configure locally. Never commit real secrets.
 
 `POST /api/reports` runs triage automatically:
 
-1. **Nebius** (primary, when `NEBIUS_API_KEY` is set): `nvidia/Nemotron-3_5-Lightning`
+1. **FastRouter LLM** (primary, when `LLM_API_KEY` is set): `anthropic/claude-opus-4.7` (overridable via `LLM_MODEL`, endpoint via `LLM_BASE_URL`)
    via the OpenAI-compatible chat-completions endpoint, `json_object` response format,
    20s timeout, 1 retry. Output is parsed defensively — unknown category, bad severity,
    or malformed JSON all trigger fallback. The department is always derived server-side
@@ -60,7 +60,7 @@ Copy `.env.example` to `.env` to configure locally. Never commit real secrets.
    −1 for minor wording (`small, minor, slight`), clamped 1–5. The rationale says
    "Heuristic match" openly — it is never presented as AI.
 
-`GET /api/health` reports the active provider (`nebius` | `heuristic`).
+`GET /api/health` reports the active provider (`llm` | `heuristic`).
 
 ## Dedup
 
@@ -87,7 +87,7 @@ waste 5, parks 3, other 2. Recomputed on create, upvote, and status change.
 | PATCH | `/reports/:id/status` | Header `x-admin-key` required. Body: `{ status, note? }`. Appends history. → `{ report }` |
 | GET | `/stats` | → `{ totalReports, byStatus, byCategory, resolvedLast30Days, avgDaysToResolve, reportsThisWeek }` |
 | GET | `/departments` | → `{ departments: [{ id, name, categories }] }` |
-| GET | `/health` | → `{ ok, db: 'postgres'\|'pgmem', ai: 'nebius'\|'heuristic', version }` |
+| GET | `/health` | → `{ ok, db: 'postgres'\|'pgmem', ai: 'llm'\|'heuristic', version }` |
 
 Errors: `400 { error, details? }` for validation, `401` for a bad/missing admin key,
 `404 { error: 'Report not found' }` for unknown ids, `500` for unexpected failures.

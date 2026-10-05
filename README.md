@@ -30,7 +30,7 @@ neighbors' reports, and placed on a public accountability map until it's resolve
 | Frontend | Next.js 14 (App Router, TypeScript), Tailwind CSS — statically exported |
 | Backend | Express 4 + TypeScript REST API |
 | Database | PostgreSQL (Render free tier); in-memory demo mode for local runs |
-| AI triage | NVIDIA Nemotron via Nebius (OpenAI-compatible) → transparent rules-engine fallback |
+| AI triage | FastRouter LLM (OpenAI-compatible) → transparent rules-engine fallback |
 | Images | Direct browser upload to Cloudinary (unsigned preset) |
 | Maps | Leaflet + OpenStreetMap, Nominatim reverse-geocoding — zero API keys |
 
@@ -39,7 +39,7 @@ everything else — one Render web service, one URL, no CORS.
 
 ### AI honesty
 
-The triage pipeline is genuinely two-tiered: when `NEBIUS_API_KEY` is configured, an LLM returns
+The triage pipeline is genuinely two-tiered: when `LLM_API_KEY` is configured, an LLM returns
 structured JSON (category, severity, rationale); otherwise a deterministic keyword rules engine does the
 job and `/api/health` reports which provider is active. The UI labels which one triaged each report.
 No fake "AI" claims, no mock endpoints.
@@ -80,7 +80,7 @@ cd server && npm test                   # 39 tests (vitest + pg-mem + supertest)
 | Var | Required | Purpose |
 |---|---|---|
 | `DATABASE_URL` | yes (or `pgmem://demo`) | Postgres connection string |
-| `NEBIUS_API_KEY` | no | Enables Nemotron LLM triage; rules engine otherwise |
+| `LLM_API_KEY` | no | Enables FastRouter LLM triage; rules engine otherwise |
 | `ADMIN_KEY` | no (auto-generated) | Guards `PATCH /api/reports/:id/status` via `x-admin-key` |
 | `PORT` | no (default 4000) | Server port |
 
@@ -100,7 +100,7 @@ Full reference in `server/README.md`.
 
 `render.yaml` is a ready blueprint: dashboard → New → Blueprint → connect this repo → Apply.
 It provisions the web service + Postgres and wires `DATABASE_URL` automatically. Optionally set
-`NEBIUS_API_KEY` in Environment afterwards; copy the generated `ADMIN_KEY` to update report statuses.
+`LLM_API_KEY` in Environment afterwards; copy the generated `ADMIN_KEY` to update report statuses.
 
 ## License
 

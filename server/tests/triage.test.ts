@@ -86,8 +86,8 @@ describe('heuristicTriage', () => {
 });
 
 describe('triageReport provider selection', () => {
-  it('uses heuristic when NEBIUS_API_KEY is absent', async () => {
-    delete process.env.NEBIUS_API_KEY;
+  it('uses heuristic when LLM_API_KEY is absent', async () => {
+    delete process.env.LLM_API_KEY;
     expect(aiProviderActive()).toBe('heuristic');
     const r = await triageReport({
       title: 'Pothole on Main St',
@@ -98,8 +98,8 @@ describe('triageReport provider selection', () => {
     expect(r.category).toBe('roads');
   });
 
-  it('uses Nebius on mocked success and derives department from category', async () => {
-    process.env.NEBIUS_API_KEY = 'test-key';
+  it('uses LLM on mocked success and derives department from category', async () => {
+    process.env.LLM_API_KEY = 'test-key';
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -120,21 +120,21 @@ describe('triageReport provider selection', () => {
       description: 'Water streaming from a hydrant into the gutter.',
       hasPhoto: false,
     });
-    expect(r.provider).toBe('nebius');
+    expect(r.provider).toBe('llm');
     expect(r.category).toBe('water');
     expect(r.severity).toBe(4);
     expect(r.department).toBe('Water Authority');
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe('https://api.studio.nebius.com/v1/chat/completions');
+    expect(url).toBe('https://api.fastrouter.ai/api/v1/chat/completions');
     expect(init.headers.Authorization).toBe('Bearer test-key');
     const body = JSON.parse(init.body);
-    expect(body.model).toBe('nvidia/Nemotron-3_5-Lightning');
+    expect(body.model).toBe('anthropic/claude-opus-4.7');
     expect(body.response_format).toEqual({ type: 'json_object' });
   });
 
-  it('retries once then falls back on Nebius HTTP failure', async () => {
-    process.env.NEBIUS_API_KEY = 'test-key';
+  it('retries once then falls back on LLM HTTP failure', async () => {
+    process.env.LLM_API_KEY = 'test-key';
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
@@ -154,8 +154,8 @@ describe('triageReport provider selection', () => {
     expect(warn).toHaveBeenCalled();
   });
 
-  it('falls back on Nebius garbage JSON', async () => {
-    process.env.NEBIUS_API_KEY = 'test-key';
+  it('falls back on LLM garbage JSON', async () => {
+    process.env.LLM_API_KEY = 'test-key';
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -176,8 +176,8 @@ describe('triageReport provider selection', () => {
     expect(r.category).toBe('waste');
   });
 
-  it('falls back when Nebius returns an invalid category', async () => {
-    process.env.NEBIUS_API_KEY = 'test-key';
+  it('falls back when LLM returns an invalid category', async () => {
+    process.env.LLM_API_KEY = 'test-key';
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({

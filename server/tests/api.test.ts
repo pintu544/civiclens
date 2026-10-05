@@ -11,7 +11,7 @@ let app: Express;
 const OLD_ENV = { ...process.env };
 
 beforeEach(() => {
-  delete process.env.NEBIUS_API_KEY;
+  delete process.env.LLM_API_KEY;
   setPool(createInMemoryPool());
   app = createApp({ adminKey: ADMIN_KEY });
 });

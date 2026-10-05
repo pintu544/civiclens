@@ -1,7 +1,7 @@
 /**
  * AI triage for CivicLens.
  *
- * Primary: Nebius (NVIDIA Nemotron via OpenAI-compatible chat completions),
+ * Primary: FastRouter (OpenAI-compatible chat completions),
  * with a 20s timeout and 1 retry. Defensive JSON parsing; ANY failure falls
  * back to the transparent keyword heuristic below — never throws.
  */
@@ -65,7 +65,7 @@ export function departmentForCategory(category: Category): string {
   return CATEGORY_TO_DEPARTMENT[category];
 }
 
-export type TriageProvider = 'nebius' | 'heuristic';
+export type TriageProvider = 'llm' | 'heuristic';
 
 export interface TriageResult {
   provider: TriageProvider;
@@ -83,16 +83,19 @@ export interface TriageInput {
 
 /** Which provider is active right now (no network call). */
 export function aiProviderActive(): TriageProvider {
-  return process.env.NEBIUS_API_KEY ? 'nebius' : 'heuristic';
+  return process.env.LLM_API_KEY ? 'llm' : 'heuristic';
 }
 
 // ---------------------------------------------------------------------------
-// Nebius primary
+// LLM primary (FastRouter, OpenAI-compatible)
 // ---------------------------------------------------------------------------
 
-const NEBIUS_URL = 'https://api.studio.nebius.com/v1/chat/completions';
-const NEBIUS_MODEL = 'nvidia/Nemotron-3_5-Lightning';
-const NEBIUS_TIMEOUT_MS = 20_000;
+const LLM_BASE_URL = (
+  process.env.LLM_BASE_URL ?? 'https://api.fastrouter.ai/api/v1'
+).replace(/\/$/, '');
+const LLM_CHAT_URL = `${LLM_BASE_URL}/chat/completions`;
+const LLM_MODEL = process.env.LLM_MODEL ?? 'anthropic/claude-opus-4.7';
+const LLM_TIMEOUT_MS = 20_000;
 
 const SYSTEM_PROMPT = [
   'You are the AI triage engine for CivicLens, a civic issue-reporting platform.',
@@ -116,11 +119,11 @@ function stripCodeFences(s: string): string {
   return m ? m[1].trim() : t;
 }
 
-async function postNebius(apiKey: string, payload: object): Promise<string> {
+async function postLlm(apiKey: string, payload: object): Promise<string> {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), NEBIUS_TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), LLM_TIMEOUT_MS);
   try {
-    const res = await fetch(NEBIUS_URL, {
+    const res = await fetch(LLM_CHAT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -131,14 +134,14 @@ async function postNebius(apiKey: string, payload: object): Promise<string> {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      throw new Error(`Nebius HTTP ${res.status}: ${body.slice(0, 200)}`);
+      throw new Error(`LLM HTTP ${res.status}: ${body.slice(0, 200)}`);
     }
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: unknown } }>;
     };
     const content = data?.choices?.[0]?.message?.content;
     if (typeof content !== 'string' || !content.trim()) {
-      throw new Error('Nebius returned empty content');
+      throw new Error('LLM returned empty content');
     }
     return content;
   } finally {
@@ -146,26 +149,26 @@ async function postNebius(apiKey: string, payload: object): Promise<string> {
   }
 }
 
-function parseNebiusTriage(content: string): Omit<TriageResult, 'provider'> {
+function parseLlmTriage(content: string): Omit<TriageResult, 'provider'> {
   let obj: Record<string, unknown>;
   try {
     obj = JSON.parse(stripCodeFences(content)) as Record<string, unknown>;
   } catch {
-    throw new Error('Nebius response was not valid JSON');
+    throw new Error('LLM response was not valid JSON');
   }
   const category = String(obj.category ?? '').toLowerCase().trim() as Category;
   if (!CATEGORIES.includes(category)) {
-    throw new Error(`Nebius returned unknown category: ${String(obj.category)}`);
+    throw new Error(`LLM returned unknown category: ${String(obj.category)}`);
   }
   const severity = Number(obj.severity);
   if (!Number.isInteger(severity) || severity < 1 || severity > 5) {
-    throw new Error(`Nebius returned invalid severity: ${String(obj.severity)}`);
+    throw new Error(`LLM returned invalid severity: ${String(obj.severity)}`);
   }
   const rationale = String(
     obj.severityRationale ?? obj.rationale ?? ''
   ).trim();
   if (!rationale) {
-    throw new Error('Nebius returned empty severity rationale');
+    throw new Error('LLM returned empty severity rationale');
   }
   return {
     category,
@@ -177,12 +180,12 @@ function parseNebiusTriage(content: string): Omit<TriageResult, 'provider'> {
   };
 }
 
-async function triageWithNebius(
+async function triageWithLlm(
   input: TriageInput,
   apiKey: string
 ): Promise<TriageResult> {
   const payload = {
-    model: NEBIUS_MODEL,
+    model: LLM_MODEL,
     response_format: { type: 'json_object' },
     temperature: 0.2,
     max_tokens: 300,
@@ -200,8 +203,8 @@ async function triageWithNebius(
   for (let attempt = 0; attempt < 2; attempt++) {
     // 1 retry: 2 attempts total
     try {
-      const content = await postNebius(apiKey, payload);
-      return { provider: 'nebius', ...parseNebiusTriage(content) };
+      const content = await postLlm(apiKey, payload);
+      return { provider: 'llm', ...parseLlmTriage(content) };
     } catch (err) {
       lastErr = err;
     }
@@ -327,18 +330,18 @@ export function heuristicTriage(
 // ---------------------------------------------------------------------------
 
 /**
- * Run triage. Uses Nebius when NEBIUS_API_KEY is set; any Nebius failure
+ * Run triage. Uses the LLM (FastRouter) when LLM_API_KEY is set; any LLM failure
  * (network, timeout, bad JSON, invalid values) falls back to the keyword
  * heuristic. Never throws for triage reasons. Returns which provider was used.
  */
 export async function triageReport(input: TriageInput): Promise<TriageResult> {
-  const apiKey = process.env.NEBIUS_API_KEY;
+  const apiKey = process.env.LLM_API_KEY;
   if (apiKey) {
     try {
-      return await triageWithNebius(input, apiKey);
+      return await triageWithLlm(input, apiKey);
     } catch (err) {
       console.warn(
-        '[triage] Nebius failed, using heuristic fallback:',
+        '[triage] LLM failed, using heuristic fallback:',
         err instanceof Error ? err.message : err
       );
     }

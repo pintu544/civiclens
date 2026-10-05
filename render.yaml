@@ -20,9 +20,9 @@ services:
         fromDatabase:
           name: civiclens-db
           property: connectionString
-      # Optional: enables Nemotron LLM triage. Without it the app uses the
+      # Optional: enables LLM triage via FastRouter. Without it the app uses the
       # built-in rules engine and works fully. Set in dashboard > Environment.
-      - key: NEBIUS_API_KEY
+      - key: LLM_API_KEY
         sync: false
       # Protects PATCH /api/reports/:id/status. Auto-generated on first deploy;
       # copy it from the dashboard if you want to update report statuses.

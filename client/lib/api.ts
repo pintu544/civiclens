@@ -26,7 +26,7 @@ export interface Report {
 }
 
 export interface TriageResult {
-  provider: 'nebius' | 'heuristic';
+  provider: 'llm' | 'heuristic';
   category: Category;
   severity: number;
   severityRationale: string;

@@ -121,7 +121,7 @@ export function createApp(options: AppOptions = {}): express.Express {
       const photoUrl = body.photoUrl?.trim() ? body.photoUrl : undefined;
       const reporterName = body.reporterName?.trim() ? body.reporterName.trim() : 'Anonymous';
 
-      // 1. AI triage (Nebius primary, heuristic fallback)
+      // 1. AI triage (LLM primary via FastRouter, heuristic fallback)
       const triage = await triageReport({
         title: body.title,
         description: body.description,
