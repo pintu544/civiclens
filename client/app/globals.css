@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* ---------- Leaflet pin / cluster styling ---------- */
+.civiclens-pin-wrap,
+.civiclens-cluster-wrap {
+  background: none;
+  border: none;
+}
+
+.civiclens-pin {
+  display: block;
+  border-radius: 9999px;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.civiclens-pin:hover {
+  transform: scale(1.25);
+}
+
+.civiclens-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(2, 6, 23, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.civiclens-cluster:hover {
+  transform: scale(1.1);
+}
+
+.leaflet-container {
+  font-family: inherit;
+  outline: none;
+}
+
+/* Tailwind preflight sets img{max-width:100%;height:auto}, which distorts
+   Leaflet tiles and any image-based layers. Neutralize inside the map. */
+.leaflet-container img {
+  max-width: none;
+  max-height: none;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(2, 6, 23, 0.18);
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px;
+  line-height: 1.4;
+}
+
+/* Keep header dropdowns above the leaflet panes */
+header {
+  isolation: isolate;
+}
