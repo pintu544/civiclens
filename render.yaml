@@ -1,0 +1,36 @@
+# Render blueprint for CivicLens — single web service + Postgres.
+# In the Render dashboard: New > Blueprint > connect the civiclens repo > Apply.
+# After deploy, copy the service URL — no code changes needed (same-origin /api).
+
+services:
+  - type: web
+    name: civiclens
+    runtime: node
+    plan: free
+    buildCommand: >-
+      cd client && npm ci && npm run build &&
+      cd ../server && npm ci && npm run build
+    startCommand: node server/dist/index.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: civiclens-db
+          property: connectionString
+      # Optional: enables Nemotron LLM triage. Without it the app uses the
+      # built-in rules engine and works fully. Set in dashboard > Environment.
+      - key: NEBIUS_API_KEY
+        sync: false
+      # Protects PATCH /api/reports/:id/status. Auto-generated on first deploy;
+      # copy it from the dashboard if you want to update report statuses.
+      - key: ADMIN_KEY
+        generateValue: true
+
+databases:
+  - name: civiclens-db
+    plan: free
+    # Note: Render's free Postgres is time-limited (currently 90 days) — plenty
+    # for the hackathon; move to a paid instance for anything long-lived.
