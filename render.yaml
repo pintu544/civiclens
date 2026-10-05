@@ -24,6 +24,10 @@ services:
       # built-in rules engine and works fully. Set in dashboard > Environment.
       - key: LLM_API_KEY
         sync: false
+      # Optional: frontend origin(s) allowed to call the API cross-origin
+      # (comma-separated). Set to the Vercel URL once the frontend is deployed.
+      - key: CORS_ORIGIN
+        sync: false
       # Protects PATCH /api/reports/:id/status. Auto-generated on first deploy;
       # copy it from the dashboard if you want to update report statuses.
       - key: ADMIN_KEY

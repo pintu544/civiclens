@@ -1,8 +1,13 @@
 // Typed client for the CivicLens REST API (PLAN.md §4).
-// All requests are same-origin: in dev, next.config rewrites /api/* to localhost:4000;
-// in production the Express server mounts /api/* alongside the static export.
+// API base URL: same-origin by default (single-service Render deploy where the
+// Express server mounts /api/* alongside the static export). When the frontend
+// is hosted separately (e.g. Vercel), set NEXT_PUBLIC_API_URL to the backend
+// origin (e.g. https://civiclens-xxxx.onrender.com). In dev, next.config
+// rewrites /api/* to localhost:4000 so the browser stays same-origin (no CORS).
 
 import type { Category, Status, SortKey } from './constants';
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '');
 
 export interface Report {
   id: string;
@@ -91,7 +96,7 @@ export class ApiError extends Error {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(path, {
+    res = await fetch(`${API_BASE}${path}`, {
       headers: { 'Content-Type': 'application/json' },
       ...init,
     });

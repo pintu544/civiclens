@@ -80,6 +80,32 @@ export function createApp(options: AppOptions = {}): express.Express {
   const app = express();
   app.use(express.json({ limit: '1mb' }));
 
+  // -- CORS -----------------------------------------------------------------
+  // Allows the frontend to be hosted on a different origin (e.g. Vercel) while
+  // the API runs here (e.g. Render). Set CORS_ORIGIN to the frontend origin(s),
+  // comma-separated (e.g. https://civiclens.vercel.app). When unset, only
+  // same-origin requests are served (no CORS headers emitted).
+  const corsOrigins = (process.env.CORS_ORIGIN ?? '')
+    .split(',')
+    .map((s) => s.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+  if (corsOrigins.length > 0) {
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      const origin = (req.header('origin') ?? '').replace(/\/$/, '');
+      if (origin && corsOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+        res.header('Vary', 'Origin');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, x-admin-key');
+      }
+      if (req.method === 'OPTIONS') {
+        res.status(204).end();
+        return;
+      }
+      next();
+    });
+  }
+
   // Malformed JSON -> 400 (instead of Express' default HTML error page)
   app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
     if (err instanceof SyntaxError && 'body' in (err as unknown as Record<string, unknown>)) {

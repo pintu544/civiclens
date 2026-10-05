@@ -418,3 +418,39 @@ describe('seed', () => {
     ]);
   });
 });
+
+describe('CORS', () => {
+  it('emits no CORS headers when CORS_ORIGIN is unset (same-origin mode)', async () => {
+    delete process.env.CORS_ORIGIN;
+    const corsApp = createApp({ adminKey: ADMIN_KEY });
+    const res = await request(corsApp)
+      .get('/api/health')
+      .set('Origin', 'https://civiclens.vercel.app');
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  it('allows a listed origin and answers preflight', async () => {
+    process.env.CORS_ORIGIN = 'https://civiclens.vercel.app';
+    const corsApp = createApp({ adminKey: ADMIN_KEY });
+    const res = await request(corsApp)
+      .get('/api/health')
+      .set('Origin', 'https://civiclens.vercel.app');
+    expect(res.headers['access-control-allow-origin']).toBe('https://civiclens.vercel.app');
+
+    const preflight = await request(corsApp)
+      .options('/api/reports')
+      .set('Origin', 'https://civiclens.vercel.app')
+      .set('Access-Control-Request-Method', 'POST');
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers['access-control-allow-origin']).toBe('https://civiclens.vercel.app');
+  });
+
+  it('does not allow an unlisted origin', async () => {
+    process.env.CORS_ORIGIN = 'https://civiclens.vercel.app';
+    const corsApp = createApp({ adminKey: ADMIN_KEY });
+    const res = await request(corsApp)
+      .get('/api/health')
+      .set('Origin', 'https://evil.example.com');
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
+});
