@@ -8,7 +8,7 @@ civic problems — potholes, dead streetlights, garbage dumps, water leaks — a
 automatically classified, severity-scored, routed to the right city department, deduplicated against
 neighbors' reports, and placed on a public accountability map until it's resolved.
 
-🔗 **Live demo:** *(URL after Render deploy)*
+🔗 **Live demo:** https://civiclens-jet.vercel.app/ (frontend) · API: https://civiclens-ws3f.onrender.com
 🎥 **Demo video:** *(YouTube link after recording)*
 
 ## What it does
