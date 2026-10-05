@@ -39,6 +39,25 @@ test.describe('dashboard', () => {
   });
 });
 
+test.describe('report detail', () => {
+  test('pretty /reports/:id/ URL serves the report shell and loads data', async ({ page }) => {
+    // Grab a real report id from the reports list (read-only)
+    await page.goto('/reports/');
+    const firstLink = page.locator('a[href^="/reports/"]').first();
+    await firstLink.waitFor({ timeout: 20000 });
+    const href = await firstLink.getAttribute('href');
+    expect(href).toMatch(/^\/reports\/[^/]+\/$/);
+
+    // The pretty URL must not 404 — Vercel rewrites it to the /reports/view/ shell
+    const resp = await page.goto(href!);
+    expect(resp?.status()).toBe(200);
+
+    // The shell reads the id from the URL and loads the report from the API
+    await expect(page.getByText('Report not found')).not.toBeVisible({ timeout: 20000 });
+    await expect(page.locator('h1').first()).toBeVisible({ timeout: 20000 });
+  });
+});
+
 test.describe('report wizard', () => {
   test('all three steps render', async ({ page }) => {
     await page.goto('/report/');
