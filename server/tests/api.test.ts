@@ -454,3 +454,28 @@ describe('CORS', () => {
     expect(res.headers['access-control-allow-origin']).toBeUndefined();
   });
 });
+
+describe('startup DB init', () => {
+  it('ensurePostgresSchema is a no-op for pg-mem pools', async () => {
+    const { ensurePostgresSchema, getDbKind } = await import('../src/db');
+    expect(getDbKind()).toBe('pgmem');
+    await expect(ensurePostgresSchema()).resolves.toBeUndefined();
+    // app still works afterwards
+    const res = await request(app).get('/api/health');
+    expect(res.body.ok).toBe(true);
+  });
+
+  it('schema.sql is idempotent (safe to apply twice)', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const sql = fs.readFileSync(
+      path.join(__dirname, '..', 'src', 'schema.sql'),
+      'utf8'
+    );
+    const creates = sql.match(/^CREATE TABLE .*$/gm) ?? [];
+    expect(creates.length).toBeGreaterThan(0);
+    for (const line of creates) {
+      expect(line.startsWith('CREATE TABLE IF NOT EXISTS ')).toBe(true);
+    }
+  });
+});

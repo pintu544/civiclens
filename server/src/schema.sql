@@ -1,4 +1,4 @@
-CREATE TABLE reports (
+CREATE TABLE IF NOT EXISTS reports (
   id UUID PRIMARY KEY,                      -- generated in Node: crypto.randomUUID()
   title TEXT NOT NULL,
   description TEXT NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE reports (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE TABLE status_history (
+CREATE TABLE IF NOT EXISTS status_history (
   id UUID PRIMARY KEY,
   report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
   from_status TEXT,
@@ -26,7 +26,7 @@ CREATE TABLE status_history (
   note TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE TABLE upvotes (
+CREATE TABLE IF NOT EXISTS upvotes (
   report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
   voter_key TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

@@ -74,3 +74,14 @@ export async function closePool(): Promise<void> {
     pool = null;
   }
 }
+
+/**
+ * Apply schema.sql to a real Postgres database. Idempotent
+ * (CREATE TABLE IF NOT EXISTS). No-op for the in-memory pg-mem pool,
+ * which already has the schema applied at creation.
+ */
+export async function ensurePostgresSchema(): Promise<void> {
+  const p = getPool();
+  if (getDbKind() !== 'postgres') return;
+  await p.query(readSchemaSql());
+}
