@@ -21,7 +21,8 @@ Use the `deploy` skill for CLI/API commands (Render has no CLI — use its REST 
 - **Schema must be idempotent on boot.** `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, async `ensurePostgresSchema()` + idempotent `runSeed()`. Real Postgres never gets schema.sql auto-applied — the 500s on /api/reports taught us this.
 - **Never commit secrets.** `LLM_API_KEY` lives only in Render dashboard env, never in repo/chat.
 - **Git identity:** Pintu Kumar <64580363+pintu544@users.noreply.github.com> — never pksharmagh4@gmail.com (maps to his other account pintuskumar).
-- **Tests:** 44/44 must pass (`npm test` in server/). Kill stale port-4000 servers by exact PID.
+- **Tests:** 47/47 must pass (`npm test` in server/). Kill stale port-4000 servers by exact PID.
+- **Admin API:** `DELETE /api/reports/:id` (x-admin-key) exists for removing spam/test reports; `PATCH /api/reports/:id/status` for moderation.
 - **No direct DB access from this VM** — egress proxy breaks PG SSL. Use the API.
 - One clearly-labeled "E2E test" report may exist in prod data from verification; harmless.
 
