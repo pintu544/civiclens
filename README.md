@@ -1,5 +1,7 @@
 # CivicLens
 
+[![CI](https://github.com/pintu544/civiclens/actions/workflows/ci.yml/badge.svg)](https://github.com/pintu544/civiclens/actions/workflows/ci.yml)
+
 **See a problem. Report it in 30 seconds. Watch your community fix it.**
 
 CivicLens is a community issue-reporting platform with an AI triage engine, built solo for
